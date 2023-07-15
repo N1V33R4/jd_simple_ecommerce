@@ -8,6 +8,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', views.HomeView.as_view(), name='home'),
+    path('contact/', views.ContactView.as_view(), name='contact'),
 ] 
 
 if settings.DEBUG:

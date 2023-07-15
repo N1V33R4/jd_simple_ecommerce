@@ -63,3 +63,56 @@ I just downloaded static/ from master branch.
 The include tag is interesting. 
 
 ## Home view
+`TemplateView`: simply renders template(?)
+
+## Contact view
+`FormView`: view that renders a template alongside form(?)  
+form's widget: can choose which type of input field to use to render  
+&emsp;can also add attrs={} for various html attributes  
+- `get_success_url()`: overwrite redirect on form success 
+
+`django-cripsy-forms`: lib for nice forms
+```shell
+pip install crispy_forms
+pip install crispy_bootstrap5
+```
+```py
+INSTALLED_APPS = (
+  ...
+  "crispy_forms",
+  "crispy_bootstrap5",
+  ...
+)
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+```
+See more [crispy-forms](https://django-crispy-forms.readthedocs.io/en/latest/index.html), [crispy_bootstrap5](https://github.com/django-crispy-forms/crispy-bootstrap5)
+
+`messages`: send message after form submission(or sth)
+```py
+from django.contrib import messages
+...
+messages.info(self.request, message)
+```
+
+`send_mail`: 
+```py
+from django.core.mail import send_mail
+...
+send_mail(
+  'Received contact form submission',
+  full_message,
+  from_email=settings.DEFAULT_FROM_EMAIL,
+  recipient_list=[settings.NOTIFY_EMAIL]
+)
+```
+
+Using `dotenv`: 
+```shell
+pip install python-dotenv
+```
+```py
+from dotenv import load_dotenv
+load_dotenv()
+SOME_KEY = os.getenv('SOME_KEY')
+```
+
