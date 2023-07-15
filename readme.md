@@ -57,3 +57,9 @@ I don't like downloading environ, seems deprecated.
 
 ## Project files
 When I think about it, I tend to copy paste a lot of backend logic between projects. Can't I do the same with CSS? :)
+
+I just downloaded static/ from master branch. 
+
+The include tag is interesting. 
+
+## Home view
