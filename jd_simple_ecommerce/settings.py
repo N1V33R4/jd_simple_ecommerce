@@ -18,8 +18,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
+    'cart',
     'crispy_forms',
-    "crispy_bootstrap5",
+    "crispy_bootstrap4",
 ]
 
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
@@ -77,7 +78,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-CRISPY_TEMPLATE_PACK = 'bootstrap5'
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Bangkok'
