@@ -1,10 +1,12 @@
 from typing import Any, Dict
-from django.http import HttpResponse
+import json, base64, requests, datetime
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views import generic
 from django.contrib import messages
-from .models import Product, OrderItem, Address
+from django.conf import settings
+from .models import Product, OrderItem, Address, Payment
 from .utils import get_or_set_order_session
 from .forms import AddToCartForm, AddressForm
 
@@ -91,7 +93,7 @@ class RemoveFromCartView(generic.View):
     order_item = get_object_or_404(OrderItem, id=kwargs['pk'])
     order_item.delete()
     return redirect('cart:summary')
-  
+
 
 class CheckoutView(generic.FormView):
   template_name = 'cart/checkout.html'
@@ -103,7 +105,7 @@ class CheckoutView(generic.FormView):
     return kwargs
   
   def get_success_url(self) -> str:
-    return reverse('home') # TODO: payment
+    return reverse('cart:payment') 
 
   def get_context_data(self, **kwargs):
     context = super().get_context_data(**kwargs)
@@ -144,3 +146,105 @@ class CheckoutView(generic.FormView):
 
     messages.info(self.request, 'You have successfully added your addresses')
     return super().form_valid(form)
+
+
+class PaymentView(generic.TemplateView):
+  template_name = 'cart/payment.html'
+
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    context['order'] = get_or_set_order_session(self.request)
+    context['PAYPAL_CLIENT_ID'] = settings.PAYPAL_CLIENT_ID
+    context['CALLBACK_URL'] = reverse('cart:thank-you')
+    return context
+  
+
+class ThankYouView(generic.TemplateView):
+  template_name = 'cart/thanks.html'
+
+
+def PaypalToken():
+  client_id = settings.PAYPAL_CLIENT_ID
+  client_secret = settings.PAYPAL_SECRET_KEY
+  url = "https://api.sandbox.paypal.com/v1/oauth2/token"
+  data = {
+    "client_id": client_id,
+    "client_secret": client_secret,
+    "grant_type":"client_credentials"
+  }
+  headers = {
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Authorization": "Basic {0}".format(base64.b64encode((client_id + ":" + client_secret).encode()).decode())
+  }
+
+  token = requests.post(url, data, headers=headers)
+  return token.json()['access_token']
+
+
+class CreatePaypalOrderView(generic.View):
+  def post(self, request):
+    order = get_or_set_order_session(request)
+    token = PaypalToken()
+    domain = request.build_absolute_uri('/')[:-1]
+    headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token,
+    }
+    json_data = {
+      "intent": "CAPTURE",
+      "application_context": {
+        "notify_url": domain,
+        "return_url": domain,
+        "cancel_url": domain,
+        "brand_name": "Django Ecom",
+        "landing_page": "BILLING",
+        "shipping_preference": "NO_SHIPPING",
+        "user_action": "CONTINUE"
+      },
+      "purchase_units": [
+        {
+          "reference_id": str(order),
+          "description": ", ".join([item.product.description for item in order.items.all()]), # type: ignore
+          # "custom_id": "",
+          # "soft_descriptor": "",
+          "amount": {
+            "currency_code": "USD",
+            "value": order.get_total()
+          },
+        }
+      ]
+    }
+
+    response = requests.post('https://api-m.sandbox.paypal.com/v2/checkout/orders', headers=headers, json=json_data)
+    # order_id = response.json()['id']
+    # linkForPayment = response.json()['links'][1]['href']
+    # return linkForPayment
+    return JsonResponse(response.json())
+
+
+class CapturePaypalOrderView(generic.View):
+  def post(self, request):
+    body = json.loads(request.body)
+    order_id = body['orderID']
+    token = PaypalToken()
+    headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token,
+    }
+    response = requests.post(f'https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}/capture', headers=headers)
+    data = response.json()
+
+    order = get_or_set_order_session(request)
+    payment = Payment.objects.create(
+      order=order,
+      successful=True,
+      raw_response=json.dumps(data),
+      amount=float(data['purchase_units'][0]['payments']['captures'][0]['amount']['value']),
+      payment_method='PayPal'
+    )
+    order.ordered = True
+    order.ordered_date = datetime.datetime.today()
+    order.save()
+
+    return JsonResponse(data)
+

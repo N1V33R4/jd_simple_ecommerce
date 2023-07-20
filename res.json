@@ -1,0 +1,94 @@
+{
+  "id": "9JF68808FD2448344",
+  "status": "COMPLETED",
+  "payment_source": {
+    "paypal": {
+      "email_address": "sb-3lpue26843752@personal.example.com",
+      "account_id": "K326X7CF4ZZDE",
+      "account_status": "VERIFIED",
+      "name": {
+        "given_name": "John",
+        "surname": "Doe"
+      },
+      "address": {
+        "country_code": "US"
+      }
+    }
+  },
+  "purchase_units": [
+    {
+      "reference_id": "ORDER-4",
+      "payments": {
+        "captures": [
+          {
+            "id": "7PX04764YC3310842",
+            "status": "COMPLETED",
+            "amount": {
+              "currency_code": "USD",
+              "value": "2400.00"
+            },
+            "final_capture": true,
+            "seller_protection": {
+              "status": "ELIGIBLE",
+              "dispute_categories": [
+                "ITEM_NOT_RECEIVED",
+                "UNAUTHORIZED_TRANSACTION"
+              ]
+            },
+            "seller_receivable_breakdown": {
+              "gross_amount": {
+                "currency_code": "USD",
+                "value": "2400.00"
+              },
+              "paypal_fee": {
+                "currency_code": "USD",
+                "value": "84.25"
+              },
+              "net_amount": {
+                "currency_code": "USD",
+                "value": "2315.75"
+              }
+            },
+            "links": [
+              {
+                "href": "https://api.sandbox.paypal.com/v2/payments/captures/7PX04764YC3310842",
+                "rel": "self",
+                "method": "GET"
+              },
+              {
+                "href": "https://api.sandbox.paypal.com/v2/payments/captures/7PX04764YC3310842/refund",
+                "rel": "refund",
+                "method": "POST"
+              },
+              {
+                "href": "https://api.sandbox.paypal.com/v2/checkout/orders/9JF68808FD2448344",
+                "rel": "up",
+                "method": "GET"
+              }
+            ],
+            "create_time": "2023-07-20T10:43:24Z",
+            "update_time": "2023-07-20T10:43:24Z"
+          }
+        ]
+      }
+    }
+  ],
+  "payer": {
+    "name": {
+      "given_name": "John",
+      "surname": "Doe"
+    },
+    "email_address": "sb-3lpue26843752@personal.example.com",
+    "payer_id": "K326X7CF4ZZDE",
+    "address": {
+      "country_code": "US"
+    }
+  },
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v2/checkout/orders/9JF68808FD2448344",
+      "rel": "self",
+      "method": "GET"
+    }
+  ]
+}

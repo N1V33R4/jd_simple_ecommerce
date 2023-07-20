@@ -225,3 +225,58 @@ Can do custom validation in `clean()`: i.e. make certain fields required if you 
 Then you can do whatever you want with the validated data.  
 
 The more I get into this, the more I disagree with the instructor's choices. 
+
+## Payments with paypal 
+Embed buttons in our page, redirect to paypal.  
+
+Create paypal business account.  
+Set paypal client_id and secret key (for dev and prod).  
+Add js sdk, render buttons, update actions 
+
+Turns out the course has (going to be) depracated paypal api usage, so I had to do it on my own. Shit's real. It's all restful now. 
+
+**Get domain in view**: 
+```py
+domain = request.build_absolute_uri('/')[:-1]
+```
+
+**Send CSRF token with JS fetch**: add this to script
+```js
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      // Does this cookie string begin with the name we want?
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+```
+
+How paypal integration works: 
+1. buttons send requests to our server
+2. server sends requests to Paypal's API with token created by client_id and secret_key
+3. server returns json returned from Paypal's API, do stuff in between (like store result in db)
+
+**Read json data from post request in view**: it's NOT IN `request.POST`  
+You have to read it from `request.body`
+```py
+import json
+json_data = json.loads(request.body)
+```
+
+You register 2 events on for the buttons:
+1. createOrder: when user clicks on paypal button(?)
+   sends post request to server, server sends post request to paypal api
+   server returns order from paypal api, event returns order.id
+2. onApprove: when user clicks pay(?)
+   sends post request to server, server sends post request to paypal api and store payment information in db. then sends back json to client
+
+## Auth and user profile
