@@ -280,3 +280,147 @@ You register 2 events on for the buttons:
    sends post request to server, server sends post request to paypal api and store payment information in db. then sends back json to client
 
 ## Auth and user profile
+`django-allauth`: easy package to configure auth! [docs](https://django-allauth.readthedocs.io/en/latest/installation.html)
+Setup:
+- `pip install django-allauth`
+- add urls: `path('accounts/', include('allauth.urls')),`
+- add config to settings.py
+- copy template from github and change styles 
+- add additional config for auth (things like login with email)
+  ```py
+  ACCOUNT_AUTHENTICATION_METHOD = 'email'
+  ACCOUNT_EMAIL_REQUIRED = True
+  ACCOUNT_USERNAME_REQUIRED = False
+  ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+  LOGIN_REDIRECT_URL = '/'
+  ```
+
+base has `extra_head` block  
+once you copied the templates, change the `login.html` to suit your tastes  
+&emsp;be it bootstrap or tailwind, or plain CSS if you're a madman  
+
+**Make sure code from github is same version as the one from pip.**
+
+### Profile view
+Template view that has orders from current logged in user.  
+
+## Order detail 
+The `queryset` and `get_queryset()` in detail view determines which items the user is allowed to see. Delegates to Page not found for some reason. 
+
+
+# Staff logic
+## Staff app
+**Custom mixin**: ex check if user is staff
+```py
+from django.shortcuts import redirect
+
+class StaffUserMixin(object):
+  def dispatch(self, request, *args, **kwargs):
+    if not request.user.is_staff:
+      return redirect("home")
+    return super().dispatch(request, *args, **kwargs) # type: ignore
+```
+
+Can then be inherited in class-based view.  
+
+## Product detail and delete
+jquery popover: 
+```js
+
+```
+
+
+
+## Rest of staff views
+### Product Create view
+- create CreateView
+- create ModelForm
+- add url
+- create template
+
+Make sure to add `enctype="multipart/form-data"` to any form with file 
+
+Update view can use same form as create. 
+
+### Pagination
+pretty complicated
+```html
+{% if page_obj.has_other_pages %}
+  <div class="row">
+    <div class="col-md-12 text-center">
+      <div class="site-block-27">
+        <ul>
+          {% if page_obj.has_previous %}
+            <li><a href="?page={{ page_obj.previous_page_number }}">&laquo;</a></li>
+          {% else %}
+            <li class="disabled"><span>&laquo;</span></li>
+          {% endif %}  
+
+          {% for i in paginator.page_range %}
+            {% if page_obj.number == i %}
+              <li class="active">
+                <span>{{ i }}</span>
+                <span class="sr-only">(current)</span>
+              </li>
+            {% else %}
+              <li><a href="?page={{ i }}">{{ i }}</a></li>
+            {% endif %}
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+            <li><a href="?page={{ page_obj.next_page_number }}">&raquo;</a></li>
+          {% else %}
+            <li class="disabled"><span>&raquo;</span></li>
+          {% endif %}  
+        </ul>
+      </div>
+    </div>
+  </div>
+{% endif %}
+```
+> I thought running a loop in each page load is slow, turns out to be not that bad
+> or it might be 'cuz of my cpu
+
+
+# Assignment
+## Category
+Product has primary and secondary categories.  
+When one model has multiple relation fields with the same model, must set `related_name` on at least one.  
+
+Many to many can have just `blank=True` 'cuz there's no field to be null (it's a separate table).  
+
+Can run makemigrations for multiple apps (separated by ' ')
+
+**Sidebar filter**: 
+> honestly, this is perfect practice as I wanted to see how to implement filters in places other than the admin site
+
+How: 
+- add all categories to context
+- render in list template as `<a href="?category={{ category.name }}">`
+- override `get_queryset()` by checking request.GET if any filters
+
+```py
+def get_queryset(self):
+  qs = Product.objects.all()
+  category = self.request.GET.get('category', None)
+  if category:
+    qs = qs.filter(primary_category__name=category)
+  return qs
+```
+Minor optimization: if Category has a ton of fields, you might just want the name when showing in list. Can select just the name instead of *. 
+```py
+def get_context_data(self, **kwargs):
+  context = super().get_context_data(**kwargs)
+  context["categories"] = Category.objects.values('name')
+  return context
+```
+Also heard `django-filter` lib is nice and easy to use. 
+
+**OR filter**: use `Q() | Q()` 
+```py
+qs = qs.filter(Q(primary_category__name=category) | Q(secondary_categories__name=category)).distinct()
+```
+
+## Stock
+
+## Stripe

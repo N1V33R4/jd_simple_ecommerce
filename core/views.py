@@ -1,12 +1,14 @@
 from typing import Any
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
 from django.views import generic
 from .forms import ContactForm
+from cart.models import Order
 
 
 class HomeView(generic.TemplateView):
@@ -42,3 +44,15 @@ class ContactView(generic.FormView):
     )
 
     return super().form_valid(form)
+
+
+class ProfileView(LoginRequiredMixin, generic.TemplateView):
+  template_name = 'profile.html'
+
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    context.update({
+      "orders": Order.objects.filter(user=self.request.user, ordered=True)
+    })
+    return context
+  

@@ -5,8 +5,10 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views import generic
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.conf import settings
-from .models import Product, OrderItem, Address, Payment
+from django.db.models import Q
+from .models import Product, OrderItem, Address, Payment, Order, Category
 from .utils import get_or_set_order_session
 from .forms import AddToCartForm, AddressForm
 
@@ -14,6 +16,19 @@ from .forms import AddToCartForm, AddressForm
 class ProductListView(generic.ListView):
   template_name = 'cart/product_list.html'
   queryset = Product.objects.all()
+
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    context["categories"] = Category.objects.values('name')
+    return context
+
+  def get_queryset(self):
+    qs = Product.objects.all()
+    category = self.request.GET.get('category', None)
+    if category:
+      qs = qs.filter(Q(primary_category__name=category) | Q(secondary_categories__name=category)) \
+             .distinct()
+    return qs
 
 
 class ProductDetailView(generic.FormView):
@@ -24,7 +39,7 @@ class ProductDetailView(generic.FormView):
     return get_object_or_404(Product, slug=self.kwargs['slug'])
 
   def get_success_url(self) -> str:
-    return reverse('home') # TODO: cart
+    return reverse('cart:summary')
   
   def get_form_kwargs(self) -> Dict[str, Any]:
     kwargs = super().get_form_kwargs()
@@ -248,3 +263,14 @@ class CapturePaypalOrderView(generic.View):
 
     return JsonResponse(data)
 
+
+class OrderDetailView(LoginRequiredMixin, generic.DetailView):
+  template_name = 'order.html'
+  context_object_name = 'order'
+
+  def get_queryset(self):
+    """Allow seeing all orders if `is_staff`, else limit to own orders."""
+    if self.request.user.is_staff: # type: ignore
+      return Order.objects.all()
+    return Order.objects.filter(user=self.request.user)
+  

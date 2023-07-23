@@ -15,4 +15,5 @@ urlpatterns = [
   path('thank-you/', views.ThankYouView.as_view(), name='thank-you'),
   path('paypal/create/order/', views.CreatePaypalOrderView.as_view(), name='paypal-create-order'),
   path('paypal/capture/order/', views.CapturePaypalOrderView.as_view(), name='paypal-capture-order'),
+  path('orders/<pk>/', views.OrderDetailView.as_view(), name='order-detail')
 ]
