@@ -422,5 +422,10 @@ qs = qs.filter(Q(primary_category__name=category) | Q(secondary_categories__name
 ```
 
 ## Stock
+stock as int field and have @property on the model (really nice pythonic way)
+
+**Validate stock when put in cart**: 
+- create field for quantity
+- validate in overriden `clean()`
 
 ## Stripe

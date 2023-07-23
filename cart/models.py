@@ -69,6 +69,7 @@ class Product(models.Model):
     related_name='primary_products',
     on_delete=models.CASCADE)
   secondary_categories = models.ManyToManyField(Category, blank=True)
+  stock = models.PositiveIntegerField(default=0)
 
   def __str__(self):
     return self.title
@@ -84,6 +85,10 @@ class Product(models.Model):
   
   def get_price(self):
     return "{:.2f}".format(self.price / 100)
+  
+  @property
+  def in_stock(self):
+    return self.stock > 0
 
 
 class OrderItem(models.Model):
