@@ -1,6 +1,6 @@
 from typing import Any, Dict
-import json, base64, requests, datetime
-from django.http import HttpRequest, HttpResponse, JsonResponse
+import json, base64, requests, datetime, stripe
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views import generic
@@ -11,6 +11,8 @@ from django.db.models import Q
 from .models import Product, OrderItem, Address, Payment, Order, Category
 from .utils import get_or_set_order_session
 from .forms import AddToCartForm, AddressForm
+
+stripe.api_key = 'sk_test_4eC39HqLyjWDarjtT1zdp7dc'
 
 
 class ProductListView(generic.ListView):
@@ -274,3 +276,36 @@ class OrderDetailView(LoginRequiredMixin, generic.DetailView):
       return Order.objects.all()
     return Order.objects.filter(user=self.request.user)
   
+
+class StripeCheckout(generic.View):
+  def post(self, request):
+    order = get_or_set_order_session(self.request)
+    domain = request.build_absolute_uri('/')[:-1]
+    line_items = [
+      {
+        'price_data': {
+          'currency': 'USD',
+          'unit_amount': int(item.get_raw_total_item_price()),
+          'product_data': {
+            'name': item.product.title,
+            # 'metadata': {
+            #   'color': item.color.name,
+            #   'size': item.size.name,
+            # }
+          }
+        },
+        'quantity': item.quantity,
+      }
+      for item in order.items.all() # type: ignore
+    ]
+    # try:
+    checkout_session = stripe.checkout.Session.create(
+      line_items = line_items,
+      mode = 'payment',
+      success_url = domain + reverse('cart:thank-you'),
+      cancel_url = domain + reverse('cart:payment'),
+    )
+    # except Exception as e:
+    #   return str(e)
+
+    return redirect(checkout_session.url)

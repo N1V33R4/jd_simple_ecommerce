@@ -25,8 +25,8 @@
         <h2 class="text-black">{{ product.title }}</h2>
         <p>{{ product.description }}</p>
 
-        <p>Available stock: <span class="font-weight-normal text-primary">{{ product.stock }}</span></p>
         {% if product.in_stock %}
+          <p>Available stock: <span class="font-weight-normal text-primary">{{ product.stock }}</span></p>
           <form action="" method="post">
             {% csrf_token %}
             {{ form|crispy }}

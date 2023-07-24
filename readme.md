@@ -429,3 +429,6 @@ stock as int field and have @property on the model (really nice pythonic way)
 - validate in overriden `clean()`
 
 ## Stripe
+the new docs are great 'cuz you just have a prebuilt payment page!
+
+After making it work with a single endpoint of mine, i found out you have a create a webhook to listen for customer payments? Bloody hell. 
